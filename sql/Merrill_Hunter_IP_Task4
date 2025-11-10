@@ -1,0 +1,67 @@
+----- TASK IV: Table Creation -----
+
+-- I ran this once to create the National Parks Service System schema
+-- CREATE SCHEMA npss;
+
+-- individuals, phone numbers, email addresses, emergency contacts
+-- rangers, certifications, teams, researchers
+-- parks, programs, projects
+-- visitors, park passes
+-- donors, card donations, check donations
+
+-- NOTE: all table creation queries include a drop-if-exists query
+--       so that table creation is idempotent for testing purposes
+
+DROP TABLE IF EXISTS npss.;
+CREATE TABLE npss.
+(
+    
+);
+
+-- Individuals
+DROP TABLE IF EXISTS npss.individuals;
+CREATE TABLE npss.individuals
+(
+    id INT PRIMARY KEY,
+    first_name NVARCHAR(255) NOT NULL,
+    middle_initial NCHAR,
+    last_name NVARCHAR(255) NOT NULL,
+    date_of_birth DATE NOT NULL,
+    gender CHAR(1) NOT NULL,
+    street NVARCHAR(255) NOT NULL,
+    city NVARCHAR(255) NOT NULL,
+    us_state CHAR(2) NOT NULL,
+    zip VARCHAR(13) NOT NULL,
+    is_subscribed_to_newsletter BIT NOT NULL
+);
+
+DROP TABLE IF EXISTS npss.individual_phone_numbers;
+CREATE TABLE npss.individual_phone_numbers
+(
+    individual_id INT,
+    phone_number VARCHAR(10),
+    PRIMARY KEY (individual_id, phone_number),
+    CONSTRAINT FK_PhoneNumbers_Individuals FOREIGN KEY (individual_id) REFERENCES npss.individuals (id)
+);
+
+DROP TABLE IF EXISTS npss.individual_email_addresses;
+CREATE TABLE npss.individual_email_addresses
+(
+    individual_id INT,
+    email_address VARCHAR(255),
+    PRIMARY KEY (individual_id, email_address),
+    CONSTRAINT FK_EmailAddresses_Individuals FOREIGN KEY (individual_id) REFERENCES npss.individuals (id)
+);
+
+DROP TABLE IF EXISTS npss.emergency_contacts;
+CREATE TABLE npss.emergency_contacts
+(
+    individual_id INT,
+    first_name NVARCHAR(255),
+    middle_initial NCHAR,
+    last_name NVARCHAR(255),
+    relationship NVARCHAR(255) NOT NULL,
+    phone_number VARCHAR(10) NOT NULL,
+    PRIMARY KEY (individual_id, first_name, middle_initial, last_name),
+    CONSTRAINT FK_EmergencyContacts_Individuals FOREIGN KEY (individual_id) REFERENCES npss.individuals (id)
+);
