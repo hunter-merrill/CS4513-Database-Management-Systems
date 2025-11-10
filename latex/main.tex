@@ -1,0 +1,190 @@
+\documentclass[11pt]{article}
+\setlength{\parskip}{1em}
+\usepackage{setspace}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[letter, margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{enumerate} 
+\usepackage{url}
+\usepackage{float}
+\setlength{\parindent}{0pt}
+
+\usepackage{microtype}
+\usepackage{subfigure}
+\usepackage{multirow}
+\usepackage{booktabs} % for professional tables
+\usepackage{float}
+\onehalfspacing
+
+\title{Synthetic Data for Alzheimer's Diagnosis}
+\author{Kristiana Karshelieva, Hunter Merrill}
+\date{Oct 28, 2025}
+
+\newcommand{\pk}[1]{%
+    \textit{\underline{#1}}%
+}
+\newcommand{\fk}[1]{%
+    \textit{#1\textsuperscript{FK}}%
+}
+\newcommand{\pfk}[1]{%
+    {\pk{\fk{#1}}}%
+}
+\newcommand{\attr}[1]{%
+    \textit{#1}%
+}
+\newcommand{\schema}[2]{%
+    \par%
+    \hangindent=0.7cm%
+    \textit{\textbf{#1}} (#2)%
+}
+
+\begin{document}
+
+% ----- TASK I  -----
+\section{Entity-Relationship Diagram}
+\includegraphics[width=1\linewidth]{DBMS Individual Project ER Diagram.png}
+
+% ----- TASK II -----
+\setlength{\parskip}{0pt}
+
+\section{Relational Schemas}
+\subsection{Entity Sets}
+
+% individual
+ \schema{individual}{%
+    \pk{individual\_id},
+    \attr{first\_name},
+    \attr{middle\_initial},
+    \attr{last\_name},
+    \attr{date\_of\_birth},
+    \attr{gender},
+    \attr{street},
+    \attr{city},
+    \attr{state},
+    \attr{postal\_code},
+    \attr{is\_subscribed\_to\_newsletter}%
+}
+\schema{individual\_phone\_number}{%
+    \pfk{individual\_id},
+    \pk{phone\_number}%
+}
+\schema{individual\_email\_address}{%
+    \pfk{individual\_id},
+    \pk{email\_address}%
+}
+\schema{emergency\_contact}{%
+    \pfk{individual\_id},
+    \pk{first\_name},
+    \pk{middle\_initial},
+    \pk{last\_name},
+    \attr{relationship},
+    \attr{phone\_number}%
+} \\
+
+% ranger
+\schema{ranger}{%
+    \pfk{ranger\_id}%
+}
+\schema{ranger\_certification}{%
+    \pfk{ranger\_id},
+    \pk{certification}%
+}
+\schema{ranger\_team}{%
+    \pk{team\_id},
+    \fk{leader\_id},
+    \attr{focus\_area},
+    \attr{formation\_date}%
+}
+\schema{researcher}{%
+    \pfk{researcher\_id},
+    \attr{research\_field},
+    \attr{hire\_date},
+    \attr{salary}%
+} \\
+
+% national_park
+\schema{national\_park}{%
+    \pk{national\_park\_name},
+    \attr{street},
+    \attr{city},
+    \attr{state},
+    \attr{postal\_code},
+    \attr{establishment\_date},
+    \attr{visitor\_capacity}%
+}
+\schema{conservation\_project}{%
+    \pk{project\_id},
+    \fk{national\_park\_name},
+    \attr{project\_name},
+    \attr{start\_date},
+    \attr{budget}%
+}
+\schema{program}{%
+    \pk{program\_name},
+    \pfk{national\_park\_name},
+    \attr{type},
+    \attr{start\_date},
+    \attr{duration}%
+} \\
+
+\schema{visitor}{%
+    \pfk{visitor\_id}%
+}
+\schema{park\_pass}{%
+    \pk{pass\_id},
+    \fk{visitor\_id},
+    \attr{type},
+    \attr{expiration\_date}%
+} \\
+
+% donations
+\schema{donor}{%
+    \pfk{donor\_id}%
+}
+\schema{card\_donation}{%
+    \pfk{national\_park\_name},
+    \pfk{donor\_id},
+    \attr{date},
+    \attr{amount},
+    \attr{campaign\_name}%
+}
+\schema{check\_donation}{%
+    \pfk{national\_park\_name},
+    \pfk{donor\_id},
+    \attr{date},
+    \attr{amount}%
+}
+
+\subsection{Relationships}
+
+\schema{mentorship}{%
+    \pfk{mentor\_id},
+    \pfk{mentee\_id},
+    \attr{start\_date}%
+}
+\schema{assigned\_to}{%
+    \pfk{ranger\_id},
+    \fk{team\_id},
+    \attr{start\_date},
+    \attr{status}%
+}
+\schema{reports\_to}{%
+    \pfk{team\_id},
+    \pk{report\_date},
+    \fk{researcher\_id},
+    \attr{summary\_of\_activities}%
+}
+\schema{enrolls\_in}{%
+    \pfk{visitor\_id},
+    \pfk{program\_name},
+    \pfk{national\_park\_name},
+    \attr{visit\_date},
+    \attr{accessibility\_needs}%
+}
+
+\setlength{\parskip}{12pt}
+\pagebreak
+
+
+
+\end{document}
