@@ -1,13 +1,5 @@
 ----- TASK IV: Table Creation -----
--- I ran this once to create the National Parks Service System schema
--- CREATE SCHEMA npss;
--- individuals, phone numbers, email addresses, emergency contacts
--- rangers, certifications, teams, researchers
--- parks, programs, projects
--- visitors, park passes
--- donors, card donations, check donations
--- NOTE: all table creation queries include a drop-if-exists query
---       so that table creation is idempotent for testing purposes
+-- CREATE SCHEMA npss; -- I ran this once to create the National Parks Service System schema
 -- Individuals
 CREATE TABLE npss.individuals (
     id VARCHAR(20) PRIMARY KEY,
@@ -100,8 +92,6 @@ CREATE TABLE npss.ranger_teams (
     );
 GO
 
-
-
 -- National Parks
 CREATE TABLE npss.parks (
     park_name NVARCHAR(127) PRIMARY KEY,
@@ -157,7 +147,7 @@ GO
 -- Donations
 CREATE TABLE npss.donors (
     donor_id VARCHAR(20) PRIMARY KEY,
-    prefers_anonymiy BIT NOT NULL,
+    prefers_anonymity BIT NOT NULL,
     CONSTRAINT FK_Donors_Individuals FOREIGN KEY (donor_id) REFERENCES npss.individuals(id)
     );
 GO

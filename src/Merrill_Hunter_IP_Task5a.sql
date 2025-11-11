@@ -77,8 +77,8 @@ ALTER PROCEDURE npss.SP_EnrollVisitorInProgram (
     @visitor_id VARCHAR(20),
     @park_name NVARCHAR(127),
     @program_name NVARCHAR(127),
-    @visit_date DATE NOT NULL,
-    @accessibility_needs NVARCHAR(127) NULL
+    @visit_date DATE,
+    @accessibility_needs NVARCHAR(127)
     )
 AS
 BEGIN
@@ -167,7 +167,7 @@ BEGIN
             );
 
         -- Insert into subtype
-        INSERT INTO npss.rangerd
+        INSERT INTO npss.rangers
         VALUES (@ranger_id)
 
         COMMIT TRANSACTION;
@@ -292,7 +292,8 @@ BEGIN
             @team_id,
             @leader_id,
             @focus_area,
-            @formation_date
+            @formation_date,
+            NULL
             )
 
         -- Assign leader to team 
@@ -476,7 +477,7 @@ BEGIN
 
         -- Insert into subtype
         INSERT INTO npss.researchers (
-            id,
+            researcher_id,
             research_field,
             hire_date,
             salary
@@ -760,6 +761,7 @@ BEGIN
         ind.first_name,
         ind.last_name,
         ra.start_date,
+        ra.years_of_service,
         ra.ranger_id,
         rt.leader_id
     ORDER BY team_role DESC, -- Leader first, then members alphabetically
@@ -856,20 +858,20 @@ BEGIN
         -- Filter to inactive visitors
         WITH inactive
         AS (
-            SELECT v.id
+            SELECT v.visitor_id
             FROM npss.visitors v
             WHERE
                 -- Not enrolled in any programs
                 NOT EXISTS (
                     SELECT 1
                     FROM npss.program_enrollments pe
-                    WHERE pe.visitor_id = v.id
+                    WHERE pe.visitor_id = v.visitor_id
                     )
                 -- Holds no non-expired passes
                 AND NOT EXISTS (
                     SELECT 1
                     FROM npss.park_passes pp
-                    WHERE pp.visitor_id = v.id AND pp.expiration_date > GETDATE()
+                    WHERE pp.visitor_id = v.visitor_id AND pp.expiration_date > GETDATE()
                     )
             )
         -- Delete their passes
@@ -877,7 +879,7 @@ BEGIN
         FROM pp
         FROM npss.park_passes pp
         INNER JOIN inactive iv
-            ON pp.visitor_id = iv.id;
+            ON pp.visitor_id = iv.visitor_id;
 
         -- Delete the visitor
         DELETE
