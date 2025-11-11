@@ -78,6 +78,7 @@ public class NPSS {
                     case 2 -> runQuery2(conn, in);
                     case 3 -> insertRangerTeam(conn, in);
                     case 4 -> runQuery4(conn, in);
+                    case 5 -> runQuery5(conn, in);
                     case 18 -> System.out.println("Thank you. Goodbye.");
                     default -> System.out.println("Invalid choice. Try again.");
                 }
@@ -423,6 +424,102 @@ public class NPSS {
         } catch (SQLException e) {
             System.err.println("Query 4 Check Donation insertion failed:");
             printSqlException(e);
+        }
+    }
+
+    // Query 5 commands
+    private static void runQuery5(Connection conn, Scanner in) {
+        // Calls helper to insert the Researcher and associate them with teams
+
+        String researcher_id = insertResearcher(conn, in);
+
+        // Only proceed if researcher successfully created
+        if (researcher_id != null) {
+            associateResearcherWithTeam(conn, in, researcher_id);
+            insertPhoneNumbers(conn, in, researcher_id);
+            insertEmails(conn, in, researcher_id);
+            insertEmergencyContacts(conn, in, researcher_id);
+        }
+    }
+
+    private static String insertResearcher(Connection conn, Scanner in) {
+        // Calls SP_InsertResearcher and returns researcher_id
+
+        // Output parameter list & read in input
+        String[] params = {
+                "researcher_id", "first_name", "middle_initial", "last_name", "date_of_birth",
+                "gender", "street", "city", "us_state", "zip", "is_subscribed_to_newsletter",
+                "research_field", "hire_date", "salary"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion parameters
+        String researcher_id = inputs[0];
+        String first_name = inputs[1];
+        String middle_initial = inputs[2];
+        String last_name = inputs[3];
+        java.sql.Date date_of_birth = java.sql.Date.valueOf(inputs[4]);
+        String gender = inputs[5];
+        String street = inputs[6];
+        String city = inputs[7];
+        String us_state = inputs[8];
+        String zip = inputs[9];
+        boolean is_subscribed_to_newsletter = Boolean.valueOf(inputs[10]);
+        String research_field = inputs[11];
+        java.sql.Date hire_date = java.sql.Date.valueOf(inputs[12]);
+        int salary = Integer.parseInt(inputs[13]);
+
+        // Try SP_InsertResearcher
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertResearcher(?,?,?,?,?,?,?,?,?,?,?,?,?,?)}")) {
+            cs.setString("researcher_id", researcher_id);
+            cs.setNString("first_name", first_name);
+            cs.setNString("middle_initial", middle_initial);
+            cs.setNString("last_name", last_name);
+            cs.setDate("date_of_birth", date_of_birth);
+            cs.setString("gender", gender);
+            cs.setNString("street", street);
+            cs.setNString("city", city);
+            cs.setString("us_state", us_state);
+            cs.setString("zip", zip);
+            cs.setBoolean("is_subscribed_to_newsletter", is_subscribed_to_newsletter);
+            cs.setNString("research_field", research_field);
+            cs.setDate("hire_date", hire_date);
+            cs.setInt("salary", salary);
+
+            cs.execute();
+            System.out.println("Successfully inserted Researcher " + researcher_id + ".");
+            return researcher_id;
+        } catch (SQLException e) {
+            System.err.println("Query 5 Researcher insertion failed:");
+            printSqlException(e);
+            return null;
+        }
+    }
+
+    private static void associateResearcherWithTeam(Connection conn, Scanner in, String researcher_id) {
+        // Calls SP_AssociateResearcherWithTeam for one or more teams
+
+        while (true) {
+            System.out
+                    .print("Enter Team ID to associate Researcher " + researcher_id + " with or type 'n' to stop: ");
+            String team_id = in.nextLine().trim();
+
+            if (team_id.equalsIgnoreCase("n") || team_id.isEmpty()) {
+                break;
+            }
+
+            // Try SP_AssociateResearcherWithTeam
+            try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_AssociateResearcherWithTeam(?,?)}")) {
+                cs.setString("researcher_id", researcher_id);
+                cs.setString("team_id", team_id);
+
+                cs.execute();
+                System.out
+                        .println("Successfully associated researcher " + researcher_id + " with team " + team_id + ".");
+            } catch (SQLException e) {
+                System.err.println("Failed to associate team " + team_id + ":");
+                printSqlException(e);
+            }
         }
     }
 
