@@ -79,6 +79,7 @@ public class NPSS {
                     case 3 -> insertRangerTeam(conn, in);
                     case 4 -> runQuery4(conn, in);
                     case 5 -> runQuery5(conn, in);
+                    case 6 -> insertReport(conn, in);
                     case 18 -> System.out.println("Thank you. Goodbye.");
                     default -> System.out.println("Invalid choice. Try again.");
                 }
@@ -520,6 +521,38 @@ public class NPSS {
                 System.err.println("Failed to associate team " + team_id + ":");
                 printSqlException(e);
             }
+        }
+    }
+
+    // Query 6 commands
+    private static void insertReport(Connection conn, Scanner in) {
+        // Calls SP_InsertReport
+
+        // Output parameter list & read in input
+        String[] params = {
+                "team_id", "report_date", "researcher_id", "summary_of_activities"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion params
+        String team_id = inputs[0];
+        java.sql.Date report_date = java.sql.Date.valueOf(inputs[1]);
+        String researcher_id = inputs[2];
+        String summary_of_activities = inputs[3];
+
+        // Try SP_InsertReport
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertReport(?,?,?,?)}")) {
+            cs.setString("team_id", team_id);
+            cs.setDate("report_date", report_date);
+            cs.setString("researcher_id", researcher_id);
+            cs.setNString("summary_of_activities", summary_of_activities);
+
+            cs.execute();
+            System.out.println(
+                    "Successfully inserted report from team " + team_id + " to researcher " + researcher_id + ".");
+        } catch (SQLException e) {
+            System.err.println("Query 6 Report insertion failed:");
+            printSqlException(e);
         }
     }
 

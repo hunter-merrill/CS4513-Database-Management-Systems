@@ -566,8 +566,8 @@ BEGIN
         INSERT INTO npss.ranger_team_reports
         VALUES (
             @team_id,
-            @researcher_id,
             @report_date,
+            @researcher_id,
             @summary_of_activities
             );
 
