@@ -6,7 +6,7 @@ import java.sql.*;
 import java.util.Scanner;
 import java.util.Properties;
 
-public class NPSS {
+public class Merrill_Hunter_IP_Task5b {
 
     // Connection params for my Azure db
     private static final String URL = "jdbc:sqlserver://hunter-merrill-dbms-fall-2025.database.windows.net:1433;" +
