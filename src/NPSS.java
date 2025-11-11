@@ -1,3 +1,7 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.Scanner;
 import java.util.Properties;
@@ -80,6 +84,17 @@ public class NPSS {
                     case 4 -> runQuery4(conn, in);
                     case 5 -> runQuery5(conn, in);
                     case 6 -> insertReport(conn, in);
+                    case 7 -> insertProgram(conn, in);
+                    case 8 -> retrieveEmergencyContacts(conn, in);
+                    case 9 -> retrieveProgramVisitors(conn, in);
+                    case 10 -> retrieveProgramsAfterDate(conn, in);
+                    case 11 -> retrieveAnonymousDonations(conn, in);
+                    case 12 -> retrieveTeamDetails(conn, in);
+                    case 13 -> retrieveAllIndividuals(conn, in);
+                    case 14 -> updateResearcherSalary(conn, in);
+                    case 15 -> deleteInactiveVisitors(conn, in);
+                    case 16 -> importTeamsFromFile(conn, in);
+                    case 17 -> exportMailingListToFile(conn, in);
                     case 18 -> System.out.println("Thank you. Goodbye.");
                     default -> System.out.println("Invalid choice. Try again.");
                 }
@@ -552,6 +567,439 @@ public class NPSS {
                     "Successfully inserted report from team " + team_id + " to researcher " + researcher_id + ".");
         } catch (SQLException e) {
             System.err.println("Query 6 Report insertion failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 7 commands
+    private static void insertProgram(Connection conn, Scanner in) {
+        // Calls SP_InsertProgram
+
+        // Output parameter list & read in input
+        String[] params = {
+                "program_name", "park_name", "program_type", "start_date", "duration"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion params
+        String program_name = inputs[0];
+        String park_name = inputs[1];
+        String program_type = inputs[2];
+
+        java.sql.Date start_date = java.sql.Date.valueOf(inputs[3]);
+        java.sql.Time duration = java.sql.Time.valueOf(inputs[4]);
+
+        // Try SP_InsertProgram
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertProgram(?,?,?,?,?)}")) {
+            cs.setNString("program_name", program_name);
+            cs.setNString("park_name", park_name);
+            cs.setNString("program_type", program_type);
+            cs.setDate("start_date", start_date);
+            cs.setTime("duration", duration);
+
+            cs.execute();
+            System.out.println("Successfully inserted program '" + program_name + "' for park " + park_name + ".");
+        } catch (SQLException e) {
+            System.err.println("Query 7 Program insertion failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 8 commands
+    private static void retrieveEmergencyContacts(Connection conn, Scanner in) {
+        // Calls SP_RetrieveEmergencyContacts and prints the results.
+
+        // Output parameter list & read in input
+        String[] params = { "individual_id" };
+        String[] inputs = readParams(in, params);
+        String individual_id = inputs[0];
+
+        // Try SP_RetrieveEmergencyContacts
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveEmergencyContacts(?)}")) {
+            cs.setString("individual_id", individual_id);
+
+            try (ResultSet rs = cs.executeQuery()) {
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No emergency contacts found for this individual.");
+                    return;
+                }
+
+                // Header
+                System.out.printf("%-25s | %-15s | %-15s\n", "Contact Name", "Relationship", "Phone Number");
+                System.out.println("---------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String contact_name = rs.getString("contact_name");
+                    String relationship = rs.getString("relationship");
+                    String phone_number = rs.getString("phone_number");
+                    System.out.printf("%-25s | %-15s | %-15s\n", contact_name, relationship, phone_number);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 8 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 9 commands
+    private static void retrieveProgramVisitors(Connection conn, Scanner in) {
+        // Calls SP_RetrieveProgramVisitors and prints the results.
+
+        // Output parameter list & read in input
+        String[] params = { "park_name", "program_name" };
+        String[] inputs = readParams(in, params);
+        String park_name = inputs[0];
+        String program_name = inputs[1];
+
+        // Try SP_RetrieveProgramVisitors
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveProgramVisitors(?,?)}")) {
+            cs.setNString("park_name", park_name);
+            cs.setNString("program_name", program_name);
+
+            try (ResultSet rs = cs.executeQuery()) {
+                System.out
+                        .println("\nEnrolled visitors for " + program_name + " at " + park_name + ".");
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No visitors found enrolled in this program.");
+                    return;
+                }
+
+                // Print Header
+                System.out.printf("%-15s | %-50s\n", "Visitor ID", "Accessibility Needs");
+                System.out.println("---------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String visitorId = rs.getString("visitor_id");
+                    String accessibilityNeeds = rs.getString("accessibility_needs");
+                    System.out.printf("%-15s | %-50s\n", visitorId, accessibilityNeeds);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 9 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 10 commands
+    private static void retrieveProgramsAfterDate(Connection conn, Scanner in) {
+        // Calls SP_RetrieveProgramsAfterDate and prints the results.
+
+        // Output parameter list & read in input
+        String[] params = { "park_name", "start_after" };
+        String[] inputs = readParams(in, params);
+        String park_name = inputs[0];
+        java.sql.Date start_after = java.sql.Date.valueOf(inputs[1]);
+
+        // Try SP_RetrieveProgramsAfterDate
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveProgramsAfterDate(?,?)}")) {
+            // Bind the program identifiers
+            cs.setNString("park_name", park_name);
+            cs.setDate("start_after", start_after);
+
+            try (ResultSet rs = cs.executeQuery()) {
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No programs found matching the criteria.");
+                    return;
+                }
+
+                // Print Header
+                System.out.printf("%-25s | %-15s | %-15s | %-10s\n",
+                        "Program Name", "Type", "Start Date", "Duration");
+                System.out.println("---------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String programName = rs.getString("program_name");
+                    String programType = rs.getString("program_type");
+                    java.sql.Date startDate = rs.getDate("start_date");
+                    java.sql.Time duration = rs.getTime("duration");
+                    System.out.printf("%-25s | %-15s | %-15s | %-10s\n",
+                            programName, programType, startDate.toString(), duration.toString());
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 10 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 11 commands
+    private static void retrieveAnonymousDonations(Connection conn, Scanner in) {
+        // Calls SP_RetrieveAnonymousDonations and prints the results.
+
+        // Output parameter list & read in input
+        System.out.print("Enter target year: ");
+        int donation_year = readInt(in);
+        System.out.print("Enter target month: ");
+        int donation_month = readInt(in);
+
+        // Try SP_RetrieveAnonymousDonations
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveAnonymousDonations(?,?)}")) {
+            cs.setInt("donation_year", donation_year);
+            cs.setInt("donation_month", donation_month);
+
+            try (ResultSet rs = cs.executeQuery()) {
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No anonymous donations found matching the criteria.");
+                    return;
+                }
+
+                // Print Header
+                System.out.printf("%-15s | %-15s | %-15s\n",
+                        "Donor ID", "Total Amount", "Average Amount");
+                System.out.println("---------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String donorId = rs.getString("donor_id");
+                    double totalAmount = rs.getDouble("total");
+                    double averageAmount = rs.getDouble("average");
+                    System.out.printf("%-15s | $%-14.2f | $%-14.2f\n",
+                            donorId, totalAmount, averageAmount);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 11 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 12 commands
+    private static void retrieveTeamDetails(Connection conn, Scanner in) {
+        // Calls SP_RetrieveTeam and prints the results.
+
+        // Output parameter list & read in input
+        String[] params = { "team_id" };
+        String[] inputs = readParams(in, params);
+        String team_id = inputs[0];
+
+        // Try SP_RetrieveTeam
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveTeam(?)}")) {
+            cs.setString("team_id", team_id);
+
+            try (ResultSet rs = cs.executeQuery()) {
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No rangers found for this team, or team does not exist.");
+                    return;
+                }
+
+                // Print Header
+                System.out.printf("%-15s | %-20s | %-10s | %-10s | %-50s\n",
+                        "Ranger ID", "Name", "Role", "Yrs. Service", "Certifications");
+                System.out.println(
+                        "-----------------------------------------------------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String rangerId = rs.getString("ranger_id");
+                    String firstName = rs.getString("first_name");
+                    String lastName = rs.getString("last_name");
+                    String fullName = firstName + " " + lastName;
+                    String teamRole = rs.getString("team_role");
+                    int yearsOfService = rs.getInt("years_of_service");
+                    String certifications = rs.getString("certifications");
+
+                    // null/empty certifications
+                    if (certifications == null) {
+                        certifications = "None";
+                    }
+
+                    System.out.printf("%-15s | %-20s | %-10s | %-10d | %-50s\n",
+                            rangerId, fullName, teamRole, yearsOfService, certifications);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 12 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 13 commands
+    private static void retrieveAllIndividuals(Connection conn, Scanner in) {
+        // Calls SP_RetrieveAllIndividuals and prints the results.
+
+        // Try SP_RetrieveAllIndividuals
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveAllIndividuals}")) {
+
+            try (ResultSet rs = cs.executeQuery()) {
+
+                // Check if any results were returned
+                if (!rs.isBeforeFirst()) {
+                    System.out.println("No individuals found in the database.");
+                    return;
+                }
+
+                // Print Header
+                System.out.printf("%-15s | %-25s | %-15s | %-15s | %-35s\n",
+                        "ID", "Full Name", "Newsletter", "Phones", "Emails");
+                System.out.println(
+                        "--------------------------------------------------------------------------------------------------------------------------------");
+
+                // Print results
+                while (rs.next()) {
+                    String id = rs.getString("id");
+                    String firstName = rs.getString("first_name");
+                    String middleInitial = rs.getString("middle_initial");
+                    String lastName = rs.getString("last_name");
+
+                    // full name for display
+                    String fullName = firstName + " " + (middleInitial != null ? middleInitial + " " : "") + lastName;
+
+                    boolean isSubscribed = rs.getBoolean("is_subscribed_to_newsletter");
+                    String phoneNumbers = rs.getString("phone_numbers");
+                    String emailAddresses = rs.getString("email_addresses");
+
+                    // Clean up null/empty strings
+                    if (phoneNumbers == null)
+                        phoneNumbers = "None";
+                    if (emailAddresses == null)
+                        emailAddresses = "None";
+
+                    System.out.printf("%-15s | %-25s | %-15s | %-15s | %-35s\n",
+                            id,
+                            fullName,
+                            isSubscribed ? "YES" : "NO",
+                            phoneNumbers,
+                            emailAddresses);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 13 retrieval failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 14 commands
+    private static void updateResearcherSalary(Connection conn, Scanner in) {
+        // Calls SP_UpdateResearcherSalary
+
+        // Try SP_UpdateResearcherSalary
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_UpdateResearcherSalaries}")) {
+            cs.execute();
+            System.out.println("Successfully updated salaries.");
+
+        } catch (SQLException e) {
+            System.err.println("Query 14 salary update failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 15 commands
+    private static void deleteInactiveVisitors(Connection conn, Scanner in) {
+        // Calls SP_DeleteInactiveVisitors
+
+        // Try SP_DeleteInactiveVisitors
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_DeleteInactiveVisitors}")) {
+            int affectedRows = cs.executeUpdate();
+            if (affectedRows > 0) {
+                System.out.println("Successfully deleted " + affectedRows + " inactive visitors.");
+            } else {
+                System.out.println("No inactive visitors found.");
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Query 15 deletion failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 16 commands
+    private static void importTeamsFromFile(Connection conn, Scanner in) {
+        System.out.print("Enter input file name: ");
+        String fileName = in.nextLine().trim();
+
+        int processed = 0;
+
+        // Use an external Scanner to read the file
+        try (Scanner fileScanner = new Scanner(new File(fileName))) {
+
+            // Loop through each line in the input file
+            while (fileScanner.hasNextLine()) {
+                String line = fileScanner.nextLine();
+                if (line.trim().isEmpty())
+                    continue; // Skip empty lines
+
+                processed++;
+                String[] fields = line.split(","); // CSV format team_id, leader_id, focus_area, formation_date
+
+                // Insertion params
+                String team_id = fields[0].trim();
+                String leader_id = fields[1].trim();
+                String focus_area = fields[2].trim();
+                java.sql.Date formation_date = java.sql.Date.valueOf(fields[3].trim());
+
+                // Try SP_InsertRangerTeam
+                try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertRangerTeam(?,?,?,?)}")) {
+                    cs.setString("team_id", team_id);
+                    cs.setString("leader_id", leader_id);
+                    cs.setNString("focus_area", focus_area);
+                    cs.setDate("formation_date", formation_date);
+
+                    cs.execute();
+                } catch (SQLException e) {
+                    System.err.printf("Database Error on line %d ('%s'): Failed to insert team %s.\n", processed,
+                            line, team_id);
+                    printSqlException(e);
+                }
+            }
+
+            System.out.printf("Successfully imported %d teams.\n", processed);
+
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + fileName);
+        }
+    }
+
+    // Query 17 commands
+    private static void exportMailingListToFile(Connection conn, Scanner in) {
+        System.out.print("Enter the output file name: ");
+        String fileName = in.nextLine().trim();
+
+        int exported = 0;
+
+        // Try SP_RetrieveMailingList
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_RetrieveMailingList}")) {
+            try (ResultSet rs = cs.executeQuery()) { // Collect results
+                try (FileWriter writer = new FileWriter(fileName)) { // Open file
+
+                    // Header
+                    writer.write("ID,FirstName,LastName,Street,City,State,Zip\n");
+
+                    // Iterate through results & write to file
+                    while (rs.next()) {
+                        String id = rs.getString("id");
+                        String first_name = rs.getString("first_name");
+                        String last_name = rs.getString("last_name");
+                        String street = rs.getString("street");
+                        String city = rs.getString("city");
+                        String us_state = rs.getString("us_state");
+                        String zip = rs.getString("zip");
+
+                        writer.write(id + "," + first_name + "," + last_name + ","
+                                + street + "," + city + "," + us_state + "," + zip + "\n");
+                        exported++;
+                    }
+
+                    System.out.println("Successfully exported " + exported + " records to " + fileName);
+
+                } catch (IOException e) {
+                    System.err.println("Error writing to file " + fileName + ": " + e.getMessage());
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Query 17 retrieval from database failed:");
             printSqlException(e);
         }
     }

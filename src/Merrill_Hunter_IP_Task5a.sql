@@ -297,7 +297,8 @@ BEGIN
             )
 
         -- Remove leader from old team
-        DELETE FROM npss.ranger_assignments
+        DELETE
+        FROM npss.ranger_assignments
         WHERE ranger_id = @leader_id;
 
         -- Assign leader to new team 
@@ -641,10 +642,16 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Retrieve all contacts associated with given individual
-    SELECT ec.contact_name,
+    SELECT CONCAT (
+            ec.first_name,
+            ' ',
+            ec.middle_initial,
+            ' ',
+            ec.last_name
+            ) AS contact_name,
         ec.relationship,
         ec.phone_number
-    FROM npss.emergency_contact ec
+    FROM npss.emergency_contacts ec
     WHERE ec.individual_id = @individual_id;
 END;
 GO
@@ -681,7 +688,7 @@ BEGIN
         p.program_type,
         p.start_date,
         p.duration
-    FROM npss.program p
+    FROM npss.programs p
     WHERE p.park_name = @park_name AND p.start_date > @start_after -- Filter after given date
     ORDER BY p.start_date ASC;
 END;
@@ -781,26 +788,35 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    -- Get distinct phones #s per individual
+    WITH aggregated_phones
+    AS (
+        SELECT individual_id,
+            STRING_AGG(phone_number, ', ') AS phone_numbers -- Aggregate all phone numbers into a single string
+        FROM npss.individual_phone_numbers
+        GROUP BY individual_id
+        ),
+        -- Get distinct emails per individual
+    aggregated_emails
+    AS (
+        SELECT individual_id,
+            STRING_AGG(email_address, ', ') AS email_addresses -- Aggregate all email addresses into a single string
+        FROM npss.individual_email_addresses
+        GROUP BY individual_id
+        )
     SELECT ind.id,
         ind.first_name,
         ind.middle_initial,
         ind.last_name,
         ind.is_subscribed_to_newsletter,
-        STRING_AGG(phones.phone_number, ', ') AS phone_numbers, -- Aggregate all phone numbers into a single string
-        STRING_AGG(emails.email_address, ', ') AS email_addresses -- Aggregate all email addresses into a single string
+        ap.phone_numbers,
+        ae.email_addresses
     FROM npss.individuals ind
-    LEFT JOIN npss.individual_phone_number phones -- Join to get phones
-        ON ind.id = phones.individual_id
-    LEFT JOIN npss.individual_email_address emails -- Joine to get emails
-        ON ind.id = emails.individual_id
-    -- Reduce to one row per individual
-    GROUP BY ind.id,
-        ind.first_name,
-        ind.middle_initial,
-        ind.last_name,
-        ind.is_subscribed_to_newsletter
-    ORDER BY ind.last_name,
-        ind.first_name;
+    LEFT JOIN aggregated_phones ap -- Join to get phones
+        ON ind.id = ap.individual_id
+    LEFT JOIN aggregated_emails ae -- Joine to get emails
+        ON ind.id = ae.individual_id
+    ORDER BY ind.id;
 END;
 GO
 
@@ -820,7 +836,7 @@ BEGIN
         WITH researchers_multiple_teams
         AS (
             SELECT tr.researcher_id
-            FROM npss.team_report tr
+            FROM npss.ranger_teams tr
             GROUP BY tr.researcher_id
             HAVING COUNT(DISTINCT tr.team_id) > 1 -- Count distinct teams
             )
@@ -828,7 +844,7 @@ BEGIN
         SET salary = r.salary * 1.03 -- +3%
         FROM npss.researchers r
         INNER JOIN researchers_multiple_teams rmt -- Join to select just the above researchers
-            ON r.id = rmt.researcher_id;
+            ON r.researcher_id = rmt.researcher_id;
 
         COMMIT TRANSACTION;
     END TRY
@@ -860,57 +876,52 @@ BEGIN
     -- Try to delete visitors
     BEGIN TRY
         -- Filter to inactive visitors
-        WITH inactive
-        AS (
-            SELECT v.visitor_id
-            FROM npss.visitors v
-            WHERE
-                -- Not enrolled in any programs
-                NOT EXISTS (
-                    SELECT 1
-                    FROM npss.program_enrollments pe
-                    WHERE pe.visitor_id = v.visitor_id
-                    )
-                -- Holds no non-expired passes
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM npss.park_passes pp
-                    WHERE pp.visitor_id = v.visitor_id AND pp.expiration_date > GETDATE()
-                    )
-            )
+        SELECT v.visitor_id
+        INTO #inactive_visitors
+        FROM npss.visitors v
+        WHERE NOT EXISTS (
+                SELECT 1
+                FROM npss.program_enrollments pe
+                WHERE pe.visitor_id = v.visitor_id
+                ) AND NOT EXISTS (
+                SELECT 1
+                FROM npss.park_passes pp
+                WHERE pp.visitor_id = v.visitor_id AND pp.expiration_date > GETDATE()
+                );
+
         -- Delete their passes
         DELETE
         FROM pp
         FROM npss.park_passes pp
-        INNER JOIN inactive iv
+        INNER JOIN #inactive_visitors iv
             ON pp.visitor_id = iv.visitor_id;
 
         -- Delete the visitor
         DELETE
         FROM v
         FROM npss.visitors v
-        INNER JOIN inactive iv
-            ON v.id = iv.id;
+        INNER JOIN #inactive_visitors iv
+            ON v.visitor_id = iv.visitor_id;
 
         -- Delete the individual
         DELETE
         FROM i
         FROM npss.individuals i
-        INNER JOIN inactive iv
-            ON i.id = iv.id
+        INNER JOIN #inactive_visitors iv
+            ON i.id = iv.visitor_id
         -- UNLESS they're some other role too
         WHERE NOT EXISTS (
                 SELECT 1
                 FROM npss.donors d
-                WHERE d.id = i.id
+                WHERE d.donor_id = i.id
                 ) AND NOT EXISTS (
                 SELECT 1
                 FROM npss.rangers r
-                WHERE r.id = i.id
+                WHERE r.ranger_id = i.id
                 ) AND NOT EXISTS (
                 SELECT 1
                 FROM npss.researchers res
-                WHERE res.id = i.id
+                WHERE res.researcher_id = i.id
                 );
 
         COMMIT TRANSACTION;
@@ -1045,4 +1056,25 @@ BEGIN
 END;
 GO
 
-
+-- Retrieve newsletter recipients
+CREATE OR ALTER PROCEDURE npss.SP_RetrieveMailingList
+AS
+BEGIN
+    SET NOCOUNT ON;
+    
+    SELECT
+        id,
+        first_name,
+        last_name,
+        street,
+        city,
+        us_state,
+        zip
+    FROM
+        npss.individuals
+    WHERE
+        is_subscribed_to_newsletter = 1
+    ORDER BY
+        last_name, first_name;
+END;
+GO
