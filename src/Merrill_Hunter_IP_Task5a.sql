@@ -296,7 +296,11 @@ BEGIN
             NULL
             )
 
-        -- Assign leader to team 
+        -- Remove leader from old team
+        DELETE FROM npss.ranger_assignments
+        WHERE ranger_id = @leader_id;
+
+        -- Assign leader to new team 
         INSERT INTO npss.ranger_assignments (
             ranger_id,
             team_id,
@@ -348,7 +352,7 @@ BEGIN
 
     -- Try to insert donation (donor must already exist in DB)
     BEGIN TRY
-        INSERT INTO npss.donations
+        INSERT INTO npss.card_donations
         VALUES (
             @park_name,
             @donor_id,
@@ -395,7 +399,7 @@ BEGIN
 
     -- Try to insert donation (donor must already exist in DB)
     BEGIN TRY
-        INSERT INTO npss.donations
+        INSERT INTO npss.check_donations
         VALUES (
             @donor_id,
             @check_number,

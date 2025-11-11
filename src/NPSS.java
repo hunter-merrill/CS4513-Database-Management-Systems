@@ -33,7 +33,7 @@ public class NPSS {
 
             int choice;
             do {
-                System.out.println("WELCOME TO THE NATIONAL PARK SERVICE SYSTEM DATABASE");
+                System.out.println("\nWELCOME TO THE NATIONAL PARK SERVICE SYSTEM DATABASE");
 
                 // Menu descriptions
                 System.out.println(
@@ -75,8 +75,9 @@ public class NPSS {
                 // Call query function based on choice
                 switch (choice) {
                     case 1 -> runQuery1(conn, in);
-                    // case 2 -> runOption2(conn, in);
-                    // case 3 -> listPilots(conn);
+                    case 2 -> runQuery2(conn, in);
+                    case 3 -> insertRangerTeam(conn, in);
+                    case 4 -> runQuery4(conn, in);
                     case 18 -> System.out.println("Thank you. Goodbye.");
                     default -> System.out.println("Invalid choice. Try again.");
                 }
@@ -93,10 +94,14 @@ public class NPSS {
         // Calls helper sub-queries
 
         String visitor_id = insertVisitor(conn, in);
-        enrollVisitorInProgram(conn, in, visitor_id);
-        insertPhoneNumbers(conn, in, visitor_id);
-        insertEmails(conn, in, visitor_id);
-        insertEmergencyContacts(conn, in, visitor_id);
+
+        // Only proceed if insertion successful
+        if (visitor_id != null) {
+            enrollVisitorInProgram(conn, in, visitor_id);
+            insertPhoneNumbers(conn, in, visitor_id);
+            insertEmails(conn, in, visitor_id);
+            insertEmergencyContacts(conn, in, visitor_id);
+        }
     }
 
     private static String insertVisitor(Connection conn, Scanner in) {
@@ -149,14 +154,14 @@ public class NPSS {
         // Calls SP_EnrollVisitorInProgram
 
         // Output parameter list & read in input
-        String[] params = { "park_name", "program_name", "visit_date", "accessibility_needs" };
+        String[] params = { "park_name", "program_name", "visit_date", "accessibility_needs (optional)" };
         String[] inputs = readParams(in, params);
 
         // Enrollment parameters
         String park_name = inputs[0];
         String program_name = inputs[1];
         java.sql.Date visit_date = java.sql.Date.valueOf(inputs[2]);
-        String accessibility_needs = inputs[3];
+        String accessibility_needs = inputs[3].isEmpty() ? null : inputs[3]; // Convert "" --> null
 
         // Try SP_EnrollVisitorInProgram
         try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_EnrollVisitorInProgram(?,?,?,?,?)}")) {
@@ -170,6 +175,253 @@ public class NPSS {
             System.out.println("Successfully enrolled visitor.");
         } catch (SQLException e) {
             System.err.println("Query 1 enrollment failed:");
+            printSqlException(e);
+        }
+    }
+
+    // Query 2 commands
+    private static void runQuery2(Connection conn, Scanner in) {
+        // Calls helper sub-queries to insert Ranger and assign them to a team
+
+        String ranger_id = insertRanger(conn, in); // Insert individual + subtype) and get id
+
+        // Only proceed if insertion successful
+        if (ranger_id != null) {
+            assignRangerToTeam(conn, in, ranger_id);
+            insertPhoneNumbers(conn, in, ranger_id);
+            insertEmails(conn, in, ranger_id);
+            insertEmergencyContacts(conn, in, ranger_id);
+            insertCertifications(conn, in, ranger_id);
+        }
+    }
+
+    private static String insertRanger(Connection conn, Scanner in) {
+        // Calls SP_InsertRanger and returns ranger_id
+
+        // Output parameter list & read in input
+        String[] params = {
+                "ranger_id", "first_name", "middle_initial", "last_name", "date_of_birth",
+                "gender", "street", "city", "us_state", "zip", "is_subscribed_to_newsletter"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion params
+        String ranger_id = inputs[0];
+        String first_name = inputs[1];
+        String middle_initial = inputs[2];
+        String last_name = inputs[3];
+        java.sql.Date date_of_birth = java.sql.Date.valueOf(inputs[4]);
+        String gender = inputs[5];
+        String street = inputs[6];
+        String city = inputs[7];
+        String us_state = inputs[8];
+        String zip = inputs[9];
+        boolean is_subscribed_to_newsletter = Boolean.valueOf(inputs[10]);
+
+        // Try SP_InsertRanger
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertRanger(?,?,?,?,?,?,?,?,?,?,?)}")) {
+            cs.setString("ranger_id", ranger_id);
+            cs.setNString("first_name", first_name);
+            cs.setNString("middle_initial", middle_initial);
+            cs.setNString("last_name", last_name);
+            cs.setDate("date_of_birth", date_of_birth);
+            cs.setString("gender", gender);
+            cs.setNString("street", street);
+            cs.setNString("city", city);
+            cs.setString("us_state", us_state);
+            cs.setString("zip", zip);
+            cs.setBoolean("is_subscribed_to_newsletter", is_subscribed_to_newsletter);
+
+            cs.execute();
+            System.out.println("Successfully inserted ranger.");
+            return ranger_id;
+        } catch (SQLException e) {
+            System.err.println("Query 2 insertion failed:");
+            printSqlException(e);
+            return null;
+        }
+    }
+
+    private static void assignRangerToTeam(Connection conn, Scanner in, String ranger_id) {
+        // Calls SP_AssignRangerToTeam
+
+        // Output parameter list & read in input
+        String[] params = { "team_id", "start_date" };
+        String[] inputs = readParams(in, params);
+
+        // Assignment parameters
+        String team_id = inputs[0];
+        java.sql.Date start_date = java.sql.Date.valueOf(inputs[1]);
+
+        // Try SP_AssignRangerToTeam
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_AssignRangerToTeam(?,?,?,?)}")) {
+            cs.setString("ranger_id", ranger_id);
+            cs.setString("team_id", team_id);
+            cs.setDate("start_date", start_date);
+            cs.setNString("assignment_status", "active");
+
+            cs.execute();
+            System.out.println("Successfully assigned ranger to team.");
+        } catch (SQLException e) {
+            System.err.println("Query 2 assignment failed:");
+            printSqlException(e);
+        }
+    }
+
+    private static void insertCertifications(Connection conn, Scanner in, String ranger_id) {
+        // Read in certifications until user indicates finish
+
+        while (true) {
+            // Read certification name
+            System.out.print("\nEnter certification name or type 'n' to stop: ");
+            String certification = in.nextLine().trim();
+
+            // Check if stopped
+            if (certification.equalsIgnoreCase("n") || certification.isEmpty()) {
+                break;
+            }
+
+            // Try SP_CertifyRanger
+            try (CallableStatement cs = conn.prepareCall("{ CALL npss.SP_CertifyRanger(?,?)}")) {
+                cs.setString("ranger_id", ranger_id);
+                cs.setNString("certification", certification);
+                cs.execute();
+                System.out.println("Successfully added certification.");
+
+            } catch (SQLException e) {
+                System.err.println("Failed to add certification: " + e.getMessage());
+            }
+        }
+    }
+
+    // Query 3 commands
+    private static String insertRangerTeam(Connection conn, Scanner in) {
+        // Calls SP_InsertRangerTeam and returns team_id
+
+        // Output parameter list & read in input
+        String[] params = {
+                "team_id", "leader_id", "focus_area", "formation_date"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Inerstion params
+        String team_id = inputs[0];
+        String leader_id = inputs[1];
+        String focus_area = inputs[2];
+        java.sql.Date formation_date = java.sql.Date.valueOf(inputs[3]);
+
+        // Try SP_InsertRangerTeam
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertRangerTeam(?,?,?,?)}")) {
+            cs.setString("team_id", team_id);
+            cs.setString("leader_id", leader_id);
+            cs.setNString("focus_area", focus_area);
+            cs.setDate("formation_date", formation_date);
+
+            cs.execute();
+            System.out.println(
+                    "Successfully inserted team " + team_id + " and assigned leader " + leader_id + ".");
+            return team_id;
+        } catch (SQLException e) {
+            System.err.println("Query 3 Team insertion failed:");
+            printSqlException(e);
+            return null;
+        }
+    }
+
+    // Query 4 commands
+    private static void runQuery4(Connection conn, Scanner in) {
+        // Calls helper to handle either card or check donation insertion.
+
+        // Get donor ID
+        System.out.print("Enter existing donor's ID: ");
+        String donor_id = in.nextLine().trim();
+
+        // Get donation type
+        System.out.print("Donation type: ");
+        String type = in.nextLine().trim().toLowerCase();
+
+        // Call insertion helper
+        switch (type) {
+            case "card":
+                insertCardDonation(conn, in, donor_id);
+                break;
+            case "check":
+                insertCheckDonation(conn, in, donor_id);
+                break;
+            default:
+                System.out.println("Invalid donation type entered. Please use 'Card' or 'Check'.");
+                break;
+        }
+    }
+
+    private static void insertCardDonation(Connection conn, Scanner in, String donor_id) {
+        // Calls SP_InsertCardDonation
+
+        // Output parameter list & read in input
+        String[] params = {
+                "park_name", "donation_date", "amount", "campaign_name (optional)",
+                "card_type", "card_last_four_digits", "card_expiration_date"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion params
+        String park_name = inputs[0];
+        java.sql.Date donation_date = java.sql.Date.valueOf(inputs[1]);
+        int amount = Integer.parseInt(inputs[2]);
+        String campaign_name = inputs[3].isEmpty() ? null : inputs[3]; // Convert "" --> null
+        String card_type = inputs[4];
+        String card_last_four_digits = inputs[5];
+        java.sql.Date card_expiration_date = java.sql.Date.valueOf(inputs[6]);
+
+        // Try SP_InsertCardDonation
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertCardDonation(?,?,?,?,?,?,?,?)}")) {
+            cs.setNString("park_name", park_name);
+            cs.setString("donor_id", donor_id);
+            cs.setDate("donation_date", donation_date);
+            cs.setInt("amount", amount);
+            cs.setNString("campaign_name", campaign_name);
+            cs.setNString("card_type", card_type);
+            cs.setString("card_last_four_digits", card_last_four_digits);
+            cs.setDate("card_expiration_date", card_expiration_date);
+
+            cs.execute();
+            System.out.println("Successfully inserted Card Donation from Donor " + donor_id + ".");
+        } catch (SQLException e) {
+            System.err.println("Query 4 Card Donation insertion failed:");
+            printSqlException(e);
+        }
+    }
+
+    private static void insertCheckDonation(Connection conn, Scanner in, String donor_id) {
+        // Calls SP_InsertCheckDonation
+
+        // Output parameter list & read in input
+        String[] params = {
+                "park_name", "donation_date", "amount", "campaign_name (optional)",
+                "check_number"
+        };
+        String[] inputs = readParams(in, params);
+
+        // Insertion params
+        String park_name = inputs[0];
+        java.sql.Date donation_date = java.sql.Date.valueOf(inputs[1]);
+        int amount = Integer.parseInt(inputs[2]);
+        String campaign_name = inputs[3].isEmpty() ? null : inputs[3]; // Convert "" --> null
+        int check_number = Integer.parseInt(inputs[4]);
+
+        // Try SP_InsertCheckDonation
+        try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_InsertCheckDonation(?,?,?,?,?,?)}")) {
+            cs.setNString("park_name", park_name);
+            cs.setString("donor_id", donor_id);
+            cs.setDate("donation_date", donation_date);
+            cs.setInt("amount", amount);
+            cs.setNString("campaign_name", campaign_name);
+            cs.setInt("check_number", check_number);
+
+            cs.execute();
+            System.out.println("Successfully inserted Check Donation from Donor " + donor_id + ".");
+        } catch (SQLException e) {
+            System.err.println("Query 4 Check Donation insertion failed:");
             printSqlException(e);
         }
     }
@@ -286,7 +538,7 @@ public class NPSS {
         // Prompt input for each parameter
         String[] inputs = new String[params.length];
         for (int i = 0; i < params.length; i++) {
-            System.out.println("Enter " + params[i] + ":");
+            System.out.print("Enter " + params[i] + ": ");
             inputs[i] = in.nextLine().trim();
         }
 
