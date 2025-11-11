@@ -895,18 +895,15 @@ BEGIN
         INNER JOIN inactive iv
             ON i.id = iv.id
         -- UNLESS they're some other role too
-        WHERE
-            NOT EXISTS (
+        WHERE NOT EXISTS (
                 SELECT 1
                 FROM npss.donors d
                 WHERE d.id = i.id
-                )
-            AND NOT EXISTS (
+                ) AND NOT EXISTS (
                 SELECT 1
                 FROM npss.rangers r
                 WHERE r.id = i.id
-                )
-            AND NOT EXISTS (
+                ) AND NOT EXISTS (
                 SELECT 1
                 FROM npss.researchers res
                 WHERE res.id = i.id
@@ -926,6 +923,121 @@ BEGIN
     END CATCH
 
     RETURN 0 -- Yay we did it
+END;
+GO
+
+-- Helper queries
+-- Insert phone number for an individual
+CREATE OR
+
+ALTER PROCEDURE npss.SP_InsertPhoneNumber (
+    @individual_id VARCHAR(20),
+    @phone_number VARCHAR(10)
+    )
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    BEGIN TRANSACTION
+
+    BEGIN TRY
+        INSERT INTO npss.individual_phone_numbers
+        VALUES (
+            @individual_id,
+            @phone_number
+            );
+
+        COMMIT TRANSACTION;
+    END TRY
+
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+
+        RETURN 1
+    END CATCH
+
+    RETURN 0
+END;
+GO
+
+-- Insert email address for an individual
+CREATE OR
+
+ALTER PROCEDURE npss.SP_InsertEmailAddress (
+    @individual_id VARCHAR(20),
+    @email_address VARCHAR(127)
+    )
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    BEGIN TRANSACTION
+
+    BEGIN TRY
+        INSERT INTO npss.individual_email_addresses
+        VALUES (
+            @individual_id,
+            @email_address
+            );
+
+        COMMIT TRANSACTION;
+    END TRY
+
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+
+        RETURN 1
+    END CATCH
+
+    RETURN 0
+END;
+GO
+
+-- Insert emergency contact for an individual
+CREATE OR
+
+ALTER PROCEDURE npss.SP_InsertEmergencyContact @individual_id VARCHAR(20),
+    @phone_number VARCHAR(10),
+    @first_name NVARCHAR(127),
+    @middle_initial NCHAR,
+    @last_name NVARCHAR(127),
+    @relationship NVARCHAR(127)
+AS
+BEGIN
+    SET NOCOUNT ON
+
+    BEGIN TRANSACTION
+
+    BEGIN TRY
+        INSERT INTO npss.emergency_contacts
+        VALUES (
+            @individual_id,
+            @phone_number,
+            @first_name,
+            @middle_initial,
+            @last_name,
+            @relationship
+            );
+
+        COMMIT TRANSACTION;
+    END TRY
+
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        THROW;
+
+        RETURN 1
+    END CATCH
+
+    RETURN 0
 END;
 GO
 

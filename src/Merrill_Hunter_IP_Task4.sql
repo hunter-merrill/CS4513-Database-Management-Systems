@@ -12,7 +12,7 @@ CREATE TABLE npss.individuals (
     city NVARCHAR(127) NOT NULL,
     us_state CHAR(2) NOT NULL,
     zip VARCHAR(13) NOT NULL,
-    age AS DATEDIFF(year, CAST(GETDATE() AS DATE), date_of_birth),
+    age AS DATEDIFF(year, date_of_birth, CAST(GETDATE() AS DATE)),
     is_subscribed_to_newsletter BIT NOT NULL
     );
 GO
@@ -201,7 +201,7 @@ CREATE TABLE npss.ranger_assignments (
     ranger_id VARCHAR(20) PRIMARY KEY,
     team_id VARCHAR(20) NOT NULL,
     start_date DATE NOT NULL,
-    years_of_service AS DATEDIFF(year, CAST(GETDATE() AS DATE), start_date),
+    years_of_service AS DATEDIFF(year, start_date, CAST(GETDATE() AS DATE)),
     assignment_status NVARCHAR(10) NOT NULL CHECK (assignment_status IN ('active', 'inactive')),
     CONSTRAINT FK_Assignments_Rangers FOREIGN KEY (ranger_id) REFERENCES npss.rangers(ranger_id),
     CONSTRAINT FK_Assignments_Teams FOREIGN KEY (team_id) REFERENCES npss.ranger_teams(team_id)
@@ -224,8 +224,8 @@ GO
 
 CREATE TABLE npss.program_enrollments (
     visitor_id VARCHAR(20),
-    program_name NVARCHAR(127),
     park_name NVARCHAR(127),
+    program_name NVARCHAR(127),
     visit_date DATE NOT NULL,
     accessibility_needs NVARCHAR(127) NULL,
     PRIMARY KEY (
