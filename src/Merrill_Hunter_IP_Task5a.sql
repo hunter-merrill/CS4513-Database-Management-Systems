@@ -1,19 +1,7 @@
 -- Query 1: Insert a new visitor into the database and associate them with one or more park programs (10/day).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertVisitor (
-    @visitor_id VARCHAR(20),
-    @first_name NVARCHAR(127),
-    @middle_initial NCHAR,
-    @last_name NVARCHAR(127),
-    @date_of_birth DATE,
-    @gender CHAR(1),
-    @street NVARCHAR(127),
-    @city NVARCHAR(127),
-    @us_state CHAR(2),
-    @zip VARCHAR(13),
-    @is_subscribed_to_newsletter BIT
-    )
+ALTER PROCEDURE npss.SP_InsertVisitor (@visitor_id VARCHAR(20), @first_name NVARCHAR(127), @middle_initial NCHAR, @last_name NVARCHAR(127), @date_of_birth DATE, @gender CHAR(1), @street NVARCHAR(127), @city NVARCHAR(127), @us_state CHAR(2), @zip VARCHAR(13), @is_subscribed_to_newsletter BIT)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -23,32 +11,8 @@ BEGIN
     -- Try to insert visitor
     BEGIN TRY
         -- Insert into supertype
-        INSERT INTO npss.individuals (
-            id,
-            first_name,
-            middle_initial,
-            last_name,
-            date_of_birth,
-            gender,
-            street,
-            city,
-            us_state,
-            zip,
-            is_subscribed_to_newsletter
-            )
-        VALUES (
-            @visitor_id,
-            @first_name,
-            @middle_initial,
-            @last_name,
-            @date_of_birth,
-            @gender,
-            @street,
-            @city,
-            @us_state,
-            @zip,
-            @is_subscribed_to_newsletter
-            );
+        INSERT INTO npss.individuals (id, first_name, middle_initial, last_name, date_of_birth, gender, street, city, us_state, zip, is_subscribed_to_newsletter)
+        VALUES (@visitor_id, @first_name, @middle_initial, @last_name, @date_of_birth, @gender, @street, @city, @us_state, @zip, @is_subscribed_to_newsletter);
 
         -- Insert into subtype
         INSERT INTO npss.visitors
@@ -73,13 +37,7 @@ GO
 
 CREATE OR
 
-ALTER PROCEDURE npss.SP_EnrollVisitorInProgram (
-    @visitor_id VARCHAR(20),
-    @park_name NVARCHAR(127),
-    @program_name NVARCHAR(127),
-    @visit_date DATE,
-    @accessibility_needs NVARCHAR(127)
-    )
+ALTER PROCEDURE npss.SP_EnrollVisitorInProgram (@visitor_id VARCHAR(20), @park_name NVARCHAR(127), @program_name NVARCHAR(127), @visit_date DATE, @accessibility_needs NVARCHAR(127))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -89,13 +47,7 @@ BEGIN
     -- Try to record enrollment
     BEGIN TRY
         INSERT INTO npss.program_enrollments
-        VALUES (
-            @visitor_id,
-            @park_name,
-            @program_name,
-            @visit_date,
-            @accessibility_needs
-            );
+        VALUES (@visitor_id, @park_name, @program_name, @visit_date, @accessibility_needs);
 
         COMMIT TRANSACTION;
     END TRY
@@ -117,19 +69,7 @@ GO
 -- Query 2: Insert a new ranger into the database and assign them to a ranger team (2/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertRanger (
-    @ranger_id VARCHAR(20),
-    @first_name NVARCHAR(127),
-    @middle_initial NCHAR,
-    @last_name NVARCHAR(127),
-    @date_of_birth DATE,
-    @gender CHAR(1),
-    @street NVARCHAR(127),
-    @city NVARCHAR(127),
-    @us_state CHAR(2),
-    @zip VARCHAR(13),
-    @is_subscribed_to_newsletter BIT
-    )
+ALTER PROCEDURE npss.SP_InsertRanger (@ranger_id VARCHAR(20), @first_name NVARCHAR(127), @middle_initial NCHAR, @last_name NVARCHAR(127), @date_of_birth DATE, @gender CHAR(1), @street NVARCHAR(127), @city NVARCHAR(127), @us_state CHAR(2), @zip VARCHAR(13), @is_subscribed_to_newsletter BIT)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -139,32 +79,8 @@ BEGIN
     -- Try to insert ranger
     BEGIN TRY
         -- Insert into supertype
-        INSERT INTO npss.individuals (
-            id,
-            first_name,
-            middle_initial,
-            last_name,
-            date_of_birth,
-            gender,
-            street,
-            city,
-            us_state,
-            zip,
-            is_subscribed_to_newsletter
-            )
-        VALUES (
-            @ranger_id,
-            @first_name,
-            @middle_initial,
-            @last_name,
-            @date_of_birth,
-            @gender,
-            @street,
-            @city,
-            @us_state,
-            @zip,
-            @is_subscribed_to_newsletter
-            );
+        INSERT INTO npss.individuals (id, first_name, middle_initial, last_name, date_of_birth, gender, street, city, us_state, zip, is_subscribed_to_newsletter)
+        VALUES (@ranger_id, @first_name, @middle_initial, @last_name, @date_of_birth, @gender, @street, @city, @us_state, @zip, @is_subscribed_to_newsletter);
 
         -- Insert into subtype
         INSERT INTO npss.rangers
@@ -189,10 +105,7 @@ GO
 
 CREATE OR
 
-ALTER PROCEDURE npss.SP_CertifyRanger (
-    @ranger_id VARCHAR(20),
-    @certification NVARCHAR(127)
-    )
+ALTER PROCEDURE npss.SP_CertifyRanger (@ranger_id VARCHAR(20), @certification NVARCHAR(127))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -202,10 +115,7 @@ BEGIN
     -- Try to add certification
     BEGIN TRY
         INSERT INTO npss.ranger_certifications
-        VALUES (
-            @ranger_id,
-            @certification
-            );
+        VALUES (@ranger_id, @certification);
 
         COMMIT TRANSACTION;
     END TRY
@@ -226,12 +136,7 @@ GO
 
 CREATE OR
 
-ALTER PROCEDURE npss.SP_AssignRangerToTeam (
-    @ranger_id VARCHAR(20),
-    @team_id VARCHAR(20),
-    @start_date DATE,
-    @assignment_status NVARCHAR(10)
-    )
+ALTER PROCEDURE npss.SP_AssignRangerToTeam (@ranger_id VARCHAR(20), @team_id VARCHAR(20), @start_date DATE, @assignment_status NVARCHAR(10))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -240,18 +145,8 @@ BEGIN
 
     -- Try to add assignment
     BEGIN TRY
-        INSERT INTO npss.ranger_assignments (
-            ranger_id,
-            team_id,
-            start_date,
-            assignment_status
-            )
-        VALUES (
-            @ranger_id,
-            @team_id,
-            @start_date,
-            @assignment_status
-            )
+        INSERT INTO npss.ranger_assignments (ranger_id, team_id, start_date, assignment_status)
+        VALUES (@ranger_id, @team_id, @start_date, @assignment_status)
 
         COMMIT TRANSACTION;
     END TRY
@@ -273,12 +168,7 @@ GO
 -- Query 3: Insert a new ranger team into the database and set its leader(1/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertRangerTeam (
-    @team_id VARCHAR(20),
-    @leader_id VARCHAR(20),
-    @focus_area NVARCHAR(127),
-    @formation_date DATE
-    )
+ALTER PROCEDURE npss.SP_InsertRangerTeam (@team_id VARCHAR(20), @leader_id VARCHAR(20), @focus_area NVARCHAR(127), @formation_date DATE)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -288,13 +178,7 @@ BEGIN
     -- Try to insert team
     BEGIN TRY
         INSERT INTO npss.ranger_teams
-        VALUES (
-            @team_id,
-            @leader_id,
-            @focus_area,
-            @formation_date,
-            NULL
-            )
+        VALUES (@team_id, @leader_id, @focus_area, @formation_date, NULL)
 
         -- Remove leader from old team
         DELETE
@@ -302,18 +186,8 @@ BEGIN
         WHERE ranger_id = @leader_id;
 
         -- Assign leader to new team 
-        INSERT INTO npss.ranger_assignments (
-            ranger_id,
-            team_id,
-            start_date,
-            assignment_status
-            )
-        VALUES (
-            @leader_id,
-            @team_id,
-            @formation_date,
-            'active'
-            );
+        INSERT INTO npss.ranger_assignments (ranger_id, team_id, start_date, assignment_status)
+        VALUES (@leader_id, @team_id, @formation_date, 'active');
 
         COMMIT TRANSACTION;
     END TRY
@@ -335,16 +209,7 @@ GO
 -- Query 4: Insert a new donation from a donor (5/day).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertCardDonation (
-    @park_name NVARCHAR(127),
-    @donor_id VARCHAR(20),
-    @donation_date DATE,
-    @amount INT,
-    @campaign_name NVARCHAR(127),
-    @card_type NVARCHAR(127),
-    @card_last_four_digits CHAR(4),
-    @card_expiration_date DATE
-    )
+ALTER PROCEDURE npss.SP_InsertCardDonation (@park_name NVARCHAR(127), @donor_id VARCHAR(20), @donation_date DATE, @amount INT, @campaign_name NVARCHAR(127), @card_type NVARCHAR(127), @card_last_four_digits CHAR(4), @card_expiration_date DATE)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -354,16 +219,7 @@ BEGIN
     -- Try to insert donation (donor must already exist in DB)
     BEGIN TRY
         INSERT INTO npss.card_donations
-        VALUES (
-            @park_name,
-            @donor_id,
-            @donation_date,
-            @amount,
-            @campaign_name,
-            @card_type,
-            @card_last_four_digits,
-            @card_expiration_date
-            )
+        VALUES (@park_name, @donor_id, @donation_date, @amount, @campaign_name, @card_type, @card_last_four_digits, @card_expiration_date)
 
         COMMIT TRANSACTION;
     END TRY
@@ -384,14 +240,7 @@ GO
 
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertCheckDonation (
-    @park_name NVARCHAR(127),
-    @donor_id VARCHAR(20),
-    @donation_date DATE,
-    @amount INT,
-    @campaign_name NVARCHAR(127),
-    @check_number INT
-    )
+ALTER PROCEDURE npss.SP_InsertCheckDonation (@park_name NVARCHAR(127), @donor_id VARCHAR(20), @donation_date DATE, @amount INT, @campaign_name NVARCHAR(127), @check_number INT)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -401,14 +250,7 @@ BEGIN
     -- Try to insert donation (donor must already exist in DB)
     BEGIN TRY
         INSERT INTO npss.check_donations
-        VALUES (
-            @donor_id,
-            @check_number,
-            @park_name,
-            @donation_date,
-            @amount,
-            @campaign_name
-            )
+        VALUES (@donor_id, @check_number, @park_name, @donation_date, @amount, @campaign_name)
 
         COMMIT TRANSACTION;
     END TRY
@@ -430,20 +272,7 @@ GO
 -- Query 5: Insert a new researcher into the database and associate them with one or more ranger teams (1/year).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertResearcher @researcher_id VARCHAR(20),
-    @first_name NVARCHAR(127),
-    @middle_initial NCHAR(1),
-    @last_name NVARCHAR(127),
-    @date_of_birth DATE,
-    @gender CHAR(1),
-    @street NVARCHAR(127),
-    @city NVARCHAR(127),
-    @us_state CHAR(2),
-    @zip VARCHAR(13),
-    @is_subscribed_to_newsletter BIT,
-    @research_field NVARCHAR(127),
-    @hire_date DATE,
-    @salary INT
+ALTER PROCEDURE npss.SP_InsertResearcher @researcher_id VARCHAR(20), @first_name NVARCHAR(127), @middle_initial NCHAR(1), @last_name NVARCHAR(127), @date_of_birth DATE, @gender CHAR(1), @street NVARCHAR(127), @city NVARCHAR(127), @us_state CHAR(2), @zip VARCHAR(13), @is_subscribed_to_newsletter BIT, @research_field NVARCHAR(127), @hire_date DATE, @salary INT
 AS
 BEGIN
     SET NOCOUNT ON
@@ -453,46 +282,12 @@ BEGIN
     -- Try to insert researcher
     BEGIN TRY
         -- Insert into supertype
-        INSERT INTO npss.individuals (
-            id,
-            first_name,
-            middle_initial,
-            last_name,
-            date_of_birth,
-            gender,
-            street,
-            city,
-            us_state,
-            zip,
-            is_subscribed_to_newsletter
-            )
-        VALUES (
-            @researcher_id,
-            @first_name,
-            @middle_initial,
-            @last_name,
-            @date_of_birth,
-            @gender,
-            @street,
-            @city,
-            @us_state,
-            @zip,
-            @is_subscribed_to_newsletter
-            );
+        INSERT INTO npss.individuals (id, first_name, middle_initial, last_name, date_of_birth, gender, street, city, us_state, zip, is_subscribed_to_newsletter)
+        VALUES (@researcher_id, @first_name, @middle_initial, @last_name, @date_of_birth, @gender, @street, @city, @us_state, @zip, @is_subscribed_to_newsletter);
 
         -- Insert into subtype
-        INSERT INTO npss.researchers (
-            researcher_id,
-            research_field,
-            hire_date,
-            salary
-            )
-        VALUES (
-            @researcher_id,
-            @research_field,
-            @hire_date,
-            @salary
-            );
+        INSERT INTO npss.researchers (researcher_id, research_field, hire_date, salary)
+        VALUES (@researcher_id, @research_field, @hire_date, @salary);
 
         COMMIT TRANSACTION;
     END TRY
@@ -513,10 +308,7 @@ GO
 
 CREATE OR
 
-ALTER PROCEDURE npss.SP_AssociateResearcherWithTeam (
-    @researcher_id VARCHAR(20),
-    @team_id VARCHAR(20)
-    )
+ALTER PROCEDURE npss.SP_AssociateResearcherWithTeam (@researcher_id VARCHAR(20), @team_id VARCHAR(20))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -550,12 +342,7 @@ GO
 -- Query 6: Insert a report submitted by a ranger team to a researcher (10/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertReport (
-    @team_id VARCHAR(20),
-    @report_date DATE,
-    @researcher_id VARCHAR(20),
-    @summary_of_activities NVARCHAR(MAX)
-    )
+ALTER PROCEDURE npss.SP_InsertReport (@team_id VARCHAR(20), @report_date DATE, @researcher_id VARCHAR(20), @summary_of_activities NVARCHAR(MAX))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -565,12 +352,7 @@ BEGIN
     -- Try to insert report
     BEGIN TRY
         INSERT INTO npss.ranger_team_reports
-        VALUES (
-            @team_id,
-            @report_date,
-            @researcher_id,
-            @summary_of_activities
-            );
+        VALUES (@team_id, @report_date, @researcher_id, @summary_of_activities);
 
         COMMIT TRANSACTION;
     END TRY
@@ -592,13 +374,7 @@ GO
 -- Query 7: Insert a new park program into the database for a specific park (2/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertProgram (
-    @program_name NVARCHAR(127),
-    @park_name NVARCHAR(127),
-    @program_type NVARCHAR(127),
-    @start_date DATE,
-    @duration TIME
-    )
+ALTER PROCEDURE npss.SP_InsertProgram (@program_name NVARCHAR(127), @park_name NVARCHAR(127), @program_type NVARCHAR(127), @start_date DATE, @duration TIME)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -608,13 +384,7 @@ BEGIN
     -- Try to insert program
     BEGIN TRY
         INSERT INTO npss.programs
-        VALUES (
-            @program_name,
-            @park_name,
-            @program_type,
-            @start_date,
-            @duration
-            );
+        VALUES (@program_name, @park_name, @program_type, @start_date, @duration);
 
         COMMIT TRANSACTION;
     END TRY
@@ -642,15 +412,7 @@ BEGIN
     SET NOCOUNT ON;
 
     -- Retrieve all contacts associated with given individual
-    SELECT CONCAT (
-            ec.first_name,
-            ' ',
-            ec.middle_initial,
-            ' ',
-            ec.last_name
-            ) AS contact_name,
-        ec.relationship,
-        ec.phone_number
+    SELECT CONCAT (ec.first_name, ' ', ec.middle_initial, ' ', ec.last_name) AS contact_name, ec.relationship, ec.phone_number
     FROM npss.emergency_contacts ec
     WHERE ec.individual_id = @individual_id;
 END;
@@ -659,15 +421,13 @@ GO
 -- Query 9: Retrieve the list of visitors enrolled in a specific park program, including their accessibility needs (2/week).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_RetrieveProgramVisitors @park_name NVARCHAR(127),
-    @program_name NVARCHAR(127)
+ALTER PROCEDURE npss.SP_RetrieveProgramVisitors @park_name NVARCHAR(127), @program_name NVARCHAR(127)
 AS
 BEGIN
     SET NOCOUNT ON;
 
     -- Retrieve each enrolled visitor's ID and needs
-    SELECT pe.visitor_id,
-        pe.accessibility_needs
+    SELECT pe.visitor_id, pe.accessibility_needs
     FROM npss.program_enrollments pe
     WHERE pe.park_name = @park_name AND pe.program_name = @program_name -- Filter by enrollment
     ORDER BY pe.visitor_id;
@@ -677,17 +437,13 @@ GO
 -- Query 10: Retrieve all park programs for a specific park that started after a given date (1/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_RetrieveProgramsAfterDate @park_name NVARCHAR(127),
-    @start_after DATE
+ALTER PROCEDURE npss.SP_RetrieveProgramsAfterDate @park_name NVARCHAR(127), @start_after DATE
 AS
 BEGIN
     SET NOCOUNT ON;
 
     -- Retrieve programs starting after given date
-    SELECT p.program_name,
-        p.program_type,
-        p.start_date,
-        p.duration
+    SELECT p.program_name, p.program_type, p.start_date, p.duration
     FROM npss.programs p
     WHERE p.park_name = @park_name AND p.start_date > @start_after -- Filter after given date
     ORDER BY p.start_date ASC;
@@ -697,10 +453,7 @@ GO
 -- Query 11: Retrieve the total and average donation amount received in a month from all anonymous donors. The result must be sorted by total amount of the donation in descending order (1/month).
 CREATE OR
 
-ALTER PROCEDURE npss.SP_RetrieveAnonymousDonations (
-    @donation_year INT,
-    @donation_month INT
-    )
+ALTER PROCEDURE npss.SP_RetrieveAnonymousDonations (@donation_year INT, @donation_month INT)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -709,9 +462,7 @@ BEGIN
     WITH anonymous_donations
     AS (
         -- Card donos
-        SELECT cards.donor_id,
-            cards.amount,
-            cards.donation_date
+        SELECT cards.donor_id, cards.amount, cards.donation_date
         FROM npss.card_donations cards
         INNER JOIN npss.donors d
             ON cards.donor_id = d.donor_id
@@ -720,18 +471,14 @@ BEGIN
         UNION ALL
         
         -- Check donos
-        SELECT checks.donor_id,
-            checks.amount,
-            checks.donation_date
+        SELECT checks.donor_id, checks.amount, checks.donation_date
         FROM npss.check_donations checks
         INNER JOIN npss.donors d
             ON checks.donor_id = d.donor_id
         WHERE d.prefers_anonymity = 1
         )
     -- Group by donor id, calculate metrics
-    SELECT donor_id,
-        SUM(amount) AS total,
-        AVG(CAST(amount AS DECIMAL(10, 2))) AS average
+    SELECT donor_id, SUM(amount) AS total, AVG(CAST(amount AS DECIMAL(10, 2))) AS average
     FROM anonymous_donations
     WHERE YEAR(donation_date) = @donation_year AND MONTH(donation_date) = @donation_month
     GROUP BY donor_id
@@ -747,17 +494,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT ind.id AS ranger_id,
-        ind.first_name,
-        ind.last_name,
-        ra.start_date,
-        ra.years_of_service,
-        CASE -- Determine role
+    SELECT ind.id AS ranger_id, ind.first_name, ind.last_name, ra.start_date, ra.years_of_service, CASE -- Determine role
             WHEN ra.ranger_id = rt.leader_id
                 THEN 'leader'
             ELSE 'member'
-            END AS team_role,
-        STRING_AGG(rc.certification, ', ') AS certifications --  -- Aggregate all certs into a single string
+            END AS team_role, STRING_AGG(rc.certification, ', ') AS certifications --  -- Aggregate all certs into a single string
     FROM npss.individuals ind
     INNER JOIN npss.rangers r -- Join to get name
         ON ind.id = r.ranger_id
@@ -768,13 +509,7 @@ BEGIN
     LEFT JOIN npss.ranger_certifications rc -- Left join to include rangers with no certs
         ON r.ranger_id = rc.ranger_id
     WHERE ra.team_id = @team_id
-    GROUP BY ind.id,
-        ind.first_name,
-        ind.last_name,
-        ra.start_date,
-        ra.years_of_service,
-        ra.ranger_id,
-        rt.leader_id
+    GROUP BY ind.id, ind.first_name, ind.last_name, ra.start_date, ra.years_of_service, ra.ranger_id, rt.leader_id
     ORDER BY team_role DESC, -- Leader first, then members alphabetically
         ind.last_name ASC;
 END;
@@ -791,26 +526,18 @@ BEGIN
     -- Get distinct phones #s per individual
     WITH aggregated_phones
     AS (
-        SELECT individual_id,
-            STRING_AGG(phone_number, ', ') AS phone_numbers -- Aggregate all phone numbers into a single string
+        SELECT individual_id, STRING_AGG(phone_number, ', ') AS phone_numbers -- Aggregate all phone numbers into a single string
         FROM npss.individual_phone_numbers
         GROUP BY individual_id
         ),
         -- Get distinct emails per individual
     aggregated_emails
     AS (
-        SELECT individual_id,
-            STRING_AGG(email_address, ', ') AS email_addresses -- Aggregate all email addresses into a single string
+        SELECT individual_id, STRING_AGG(email_address, ', ') AS email_addresses -- Aggregate all email addresses into a single string
         FROM npss.individual_email_addresses
         GROUP BY individual_id
         )
-    SELECT ind.id,
-        ind.first_name,
-        ind.middle_initial,
-        ind.last_name,
-        ind.is_subscribed_to_newsletter,
-        ap.phone_numbers,
-        ae.email_addresses
+    SELECT ind.id, ind.first_name, ind.middle_initial, ind.last_name, ind.is_subscribed_to_newsletter, ap.phone_numbers, ae.email_addresses
     FROM npss.individuals ind
     LEFT JOIN aggregated_phones ap -- Join to get phones
         ON ind.id = ap.individual_id
@@ -945,10 +672,7 @@ GO
 -- Insert phone number for an individual
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertPhoneNumber (
-    @individual_id VARCHAR(20),
-    @phone_number VARCHAR(10)
-    )
+ALTER PROCEDURE npss.SP_InsertPhoneNumber (@individual_id VARCHAR(20), @phone_number VARCHAR(10))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -957,10 +681,7 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO npss.individual_phone_numbers
-        VALUES (
-            @individual_id,
-            @phone_number
-            );
+        VALUES (@individual_id, @phone_number);
 
         COMMIT TRANSACTION;
     END TRY
@@ -981,10 +702,7 @@ GO
 -- Insert email address for an individual
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertEmailAddress (
-    @individual_id VARCHAR(20),
-    @email_address VARCHAR(127)
-    )
+ALTER PROCEDURE npss.SP_InsertEmailAddress (@individual_id VARCHAR(20), @email_address VARCHAR(127))
 AS
 BEGIN
     SET NOCOUNT ON
@@ -993,10 +711,7 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO npss.individual_email_addresses
-        VALUES (
-            @individual_id,
-            @email_address
-            );
+        VALUES (@individual_id, @email_address);
 
         COMMIT TRANSACTION;
     END TRY
@@ -1017,12 +732,7 @@ GO
 -- Insert emergency contact for an individual
 CREATE OR
 
-ALTER PROCEDURE npss.SP_InsertEmergencyContact @individual_id VARCHAR(20),
-    @phone_number VARCHAR(10),
-    @first_name NVARCHAR(127),
-    @middle_initial NCHAR,
-    @last_name NVARCHAR(127),
-    @relationship NVARCHAR(127)
+ALTER PROCEDURE npss.SP_InsertEmergencyContact @individual_id VARCHAR(20), @phone_number VARCHAR(10), @first_name NVARCHAR(127), @middle_initial NCHAR, @last_name NVARCHAR(127), @relationship NVARCHAR(127)
 AS
 BEGIN
     SET NOCOUNT ON
@@ -1031,14 +741,7 @@ BEGIN
 
     BEGIN TRY
         INSERT INTO npss.emergency_contacts
-        VALUES (
-            @individual_id,
-            @phone_number,
-            @first_name,
-            @middle_initial,
-            @last_name,
-            @relationship
-            );
+        VALUES (@individual_id, @phone_number, @first_name, @middle_initial, @last_name, @relationship);
 
         COMMIT TRANSACTION;
     END TRY
@@ -1057,24 +760,18 @@ END;
 GO
 
 -- Retrieve newsletter recipients
-CREATE OR ALTER PROCEDURE npss.SP_RetrieveMailingList
+CREATE OR
+
+ALTER PROCEDURE npss.SP_RetrieveMailingList
 AS
 BEGIN
     SET NOCOUNT ON;
-    
-    SELECT
-        id,
-        first_name,
-        last_name,
-        street,
-        city,
-        us_state,
-        zip
-    FROM
-        npss.individuals
-    WHERE
-        is_subscribed_to_newsletter = 1
-    ORDER BY
-        last_name, first_name;
+
+    SELECT id, first_name, last_name, street, city, us_state, zip
+    FROM npss.individuals
+    WHERE is_subscribed_to_newsletter = 1
+    ORDER BY last_name, first_name;
 END;
 GO
+
+

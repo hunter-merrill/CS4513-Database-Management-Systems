@@ -4,7 +4,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
 import java.util.Scanner;
-import java.util.Properties;
 
 public class Merrill_Hunter_IP_Task5b {
 
@@ -626,10 +625,6 @@ public class Merrill_Hunter_IP_Task5b {
                     return;
                 }
 
-                // Header
-                System.out.printf("%-25s | %-15s | %-15s\n", "Contact Name", "Relationship", "Phone Number");
-                System.out.println("---------------------------------------------------------------------");
-
                 // Print results
                 while (rs.next()) {
                     String contact_name = rs.getString("contact_name");
@@ -669,10 +664,6 @@ public class Merrill_Hunter_IP_Task5b {
                     return;
                 }
 
-                // Print Header
-                System.out.printf("%-15s | %-50s\n", "Visitor ID", "Accessibility Needs");
-                System.out.println("---------------------------------------------------------------------");
-
                 // Print results
                 while (rs.next()) {
                     String visitorId = rs.getString("visitor_id");
@@ -709,11 +700,6 @@ public class Merrill_Hunter_IP_Task5b {
                     System.out.println("No programs found matching the criteria.");
                     return;
                 }
-
-                // Print Header
-                System.out.printf("%-25s | %-15s | %-15s | %-10s\n",
-                        "Program Name", "Type", "Start Date", "Duration");
-                System.out.println("---------------------------------------------------------------------");
 
                 // Print results
                 while (rs.next()) {
@@ -754,11 +740,6 @@ public class Merrill_Hunter_IP_Task5b {
                     return;
                 }
 
-                // Print Header
-                System.out.printf("%-15s | %-15s | %-15s\n",
-                        "Donor ID", "Total Amount", "Average Amount");
-                System.out.println("---------------------------------------------------------------------");
-
                 // Print results
                 while (rs.next()) {
                     String donorId = rs.getString("donor_id");
@@ -794,12 +775,6 @@ public class Merrill_Hunter_IP_Task5b {
                     System.out.println("No rangers found for this team, or team does not exist.");
                     return;
                 }
-
-                // Print Header
-                System.out.printf("%-15s | %-20s | %-10s | %-10s | %-50s\n",
-                        "Ranger ID", "Name", "Role", "Yrs. Service", "Certifications");
-                System.out.println(
-                        "-----------------------------------------------------------------------------------------------------------------");
 
                 // Print results
                 while (rs.next()) {
@@ -840,12 +815,6 @@ public class Merrill_Hunter_IP_Task5b {
                     System.out.println("No individuals found in the database.");
                     return;
                 }
-
-                // Print Header
-                System.out.printf("%-15s | %-25s | %-15s | %-15s | %-35s\n",
-                        "ID", "Full Name", "Newsletter", "Phones", "Emails");
-                System.out.println(
-                        "--------------------------------------------------------------------------------------------------------------------------------");
 
                 // Print results
                 while (rs.next()) {
@@ -904,7 +873,7 @@ public class Merrill_Hunter_IP_Task5b {
         try (CallableStatement cs = conn.prepareCall("{CALL npss.SP_DeleteInactiveVisitors}")) {
             int affectedRows = cs.executeUpdate();
             if (affectedRows > 0) {
-                System.out.println("Successfully deleted " + affectedRows + " inactive visitors.");
+                System.out.println("Successfully deleted inactive visitors.");
             } else {
                 System.out.println("No inactive visitors found.");
             }

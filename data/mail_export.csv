@@ -1,0 +1,12 @@
+ID,FirstName,LastName,Street,City,State,Zip
+R0000D,Bob,Bob,None,Nonetown,KT,44444
+RSCH1,Maria Paula,Lis,Maasstraat,Ams,NA,11111
+D6666Z,Luigi,Mario,1-1 Mushroom Ln,Mushroom Kingdom,CA,90210
+D5555Z,Mario,Mario,1-1 Mushroom Ln,Mushroom Kingdom,CA,90210
+V1234Z,Hunter,Merrill,Frey,Sville,TX,76401
+V4567Z,Hunter,Merrill,Penn,D.C.,Ma,00000
+RS444B,Bill,Nye,42 Science Way,Seattle,WA,98109
+R0000A,Ranger,Rangerson,A,B,CD,00000
+R0000B,Rodger,Rodgerson,D,E,FG,00001
+D8888Z,Waluigi,Wario,1-1 Mushroom Ln,Mushroom Kingdom,CA,90210
+D7777Z,Wario,Wario,1-1 Mushroom Ln,Mushroom Kingdom,CA,90210
